@@ -23,27 +23,38 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 def _inject_streamlit_secrets_into_environ() -> None:
     """Streamlit Community Cloud: keys live in App settings → Secrets (TOML), not in the repo."""
     try:
-        secrets = st.secrets
-    except Exception:
-        return
-    for key in (
+        from streamlit.errors import StreamlitSecretNotFoundError
+    except ImportError:
+
+        class StreamlitSecretNotFoundError(Exception):
+            pass
+
+    keys = (
         "OPENAI_API_KEY",
         "OPENAI_MODEL",
         "OPENAI_VISION_MODEL",
         "OPENAI_VISION_MAX_PAGES",
         "OPENAI_VISION_DPI",
         "TESSERACT_CMD",
-    ):
-        if key not in secrets:
-            continue
-        val = secrets[key]
-        if val is None:
-            continue
-        s = str(val).strip()
-        if not s:
-            continue
-        if not os.environ.get(key):
-            os.environ[key] = s
+    )
+    # Local dev: no secrets.toml → `key in st.secrets` parses files and raises.
+    try:
+        secrets = st.secrets
+        for key in keys:
+            if key not in secrets:
+                continue
+            val = secrets[key]
+            if val is None:
+                continue
+            s = str(val).strip()
+            if not s:
+                continue
+            if not os.environ.get(key):
+                os.environ[key] = s
+    except StreamlitSecretNotFoundError:
+        return
+    except FileNotFoundError:
+        return
 
 
 st.set_page_config(page_title="CV Extractor (Arabic Profile)", layout="wide")
