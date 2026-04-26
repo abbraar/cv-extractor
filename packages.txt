@@ -1,0 +1,5 @@
+# System packages for Streamlit Community Cloud (apt).
+# Enables optional Tesseract OCR before OpenAI vision.
+tesseract-ocr
+tesseract-ocr-eng
+tesseract-ocr-ara
